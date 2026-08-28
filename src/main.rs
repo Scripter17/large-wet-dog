@@ -48,7 +48,7 @@ pub struct LargeWetDog;
 static MSG_FILTER: LazyLock<Regex> = LazyLock::new(|| Regex::new( r"https?://(?:www\.)?(?:x|twitter)\.com/[^/]+/status/\d+"  ).expect("???"));
 
 /// The [`Regex`] to check if we should care about a URL.
-static ID_GETTER : LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^https?://(?:www\.)?(?:x|twitter)\.com/[^/]+/status/(\d+)").expect("???"));
+static ID_GETTER : LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^https?://(?:www\.)?(?:x|twitter)\.com/([^/]+/status/\d+)").expect("???"));
 
 /// The description for present-but-failed embeds.
 const FAIL_DESC: Option<&str> = Some("Age\\-restricted adult content\\. This content might not be appropriate for people under 18 years old\\. To view this media, you’ll need to log in to X\\. Learn more");
@@ -61,22 +61,26 @@ impl EventHandler for LargeWetDog {
 
             let msg = context.http.get_message(msg.channel_id, msg.id).await.expect("The message to still exist");
 
-            let mut ids = parse::parse(&msg.content).filter_map(|x| Some(ID_GETTER.captures(x)?.get(1)?.as_str())).collect::<Vec<_>>();
+            let mut paths = parse::parse(&msg.content).filter_map(|x| Some(ID_GETTER.captures(x)?.get(1)?.as_str())).collect::<Vec<_>>();
 
-            let not_fail_ids = msg.embeds.iter()
+            let not_fail_paths = msg.embeds.iter()
                 .filter    (|embed| embed.description.as_deref() != FAIL_DESC)
                 .filter    (|embed| embed.image.as_ref().is_some_and(|image| !image.url.contains("/media-preview/")))
                 .filter_map(|embed| Some(ID_GETTER.captures(embed.url.as_deref()?)?.get(1)?.as_str()));
 
-            for not_fail_id in not_fail_ids {
-                ids.retain(|&id| id != not_fail_id);
+            for not_fail_path in not_fail_paths {
+                paths.retain(|&path| path != not_fail_path);
             }
 
-            if !ids.is_empty() {
+            if !paths.is_empty() {
                 let mut ret = String::new();
 
-                for id in ids {
-                    writeln!(ret, "https://fixupx.com/i/status/{id}").expect("???");
+                for path in paths {
+                    writeln!(ret, "https://fixupx.com/{path}").expect("???");
+                }
+
+                if msg.content.contains("||") {
+                    ret = format!("Found \\|\\|; Assuming all embeds are spoilers\n||{ret}||");
                 }
 
                 msg.reply(&context.http, ret).await.expect("Sending the reply to work");
