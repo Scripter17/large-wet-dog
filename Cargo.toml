@@ -8,7 +8,7 @@ keywords     = []
 categories   = []
 license      = "AGPL-3.0-or-later"
 readme       = "README.md"
-rust-version = "1.98"
+rust-version = "1.97.1"
 
 [dependencies]
 serenity  = { git = "https://github.com/serenity-rs/serenity", branch = "next" }
