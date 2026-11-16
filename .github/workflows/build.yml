@@ -1,0 +1,40 @@
+name: Build
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    if: ${{ !github.event.act }}
+
+    strategy:
+      matrix:
+        oses: [
+            {name: linux  , runner: ubuntu-latest , extension: ""    },
+            {name: windows, runner: windows-latest, extension: ".exe"},
+            {name: macos  , runner: macos-latest  , extension: ""    }
+          ]
+
+    runs-on: ${{ matrix.oses.runner }}
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+    - name: Build
+      run: |
+        cargo build -r
+        cp target/release/large-wet-dog${{ matrix.oses.extension }} ./
+
+    - name: Upload
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: url-cleaner-${{ matrix.oses.name }}
+        if-no-files-found: error
+        path: |
+          large-wet-dog${{ matrix.oses.extension }}
+          LICENSE.txt
+          src/
+          Cargo.toml
+          Cargo.lock

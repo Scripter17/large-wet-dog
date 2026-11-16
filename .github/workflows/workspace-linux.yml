@@ -4,19 +4,34 @@ on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
-  CARGO_PROFILE_dev_DEBUG: 0
 
 jobs:
-  clippy:
+  test_linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Clippy
-      run: cargo clippy -- -D warnings
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39
+      with:
+        tool: cargo-hack
     - name: Test
-      run: cargo test
+      run: cargo hack test --feature-powerset --clean-per-run
+
+  doc_linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39
+      with:
+        tool: cargo-hack
+    - name: Doc
+      run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items
+
+  clippy_linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39
+      with:
+        tool: cargo-hack
+    - name: Clippy
+      run: cargo hack clippy --feature-powerset --clean-per-run -- -D warnings

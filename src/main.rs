@@ -10,10 +10,13 @@ use thiserror::Error;
 use serenity::all::*;
 use clap::Parser;
 
-mod reply;
 mod get_urls;
+mod gen_reply;
 
+#[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// A discord bot that fixes some embed fails.
+///
+/// Licensed under the Aferro GNU Public License version 3.0 or later.
 ///
 /// https://github.com/Scripter17/large-wet-dog
 #[derive(Debug, Parser)]
@@ -76,6 +79,10 @@ impl EventHandler for LargeWetDog {
                 }
             },
             FullEvent::MessageUpdate {event: MessageUpdateEvent {message: msg, ..}, ..} => {
+                if msg.edited_timestamp.is_none_or(|timestamp| serenity::model::timestamp::Timestamp::now().unix_timestamp() - timestamp.unix_timestamp() > 30) {
+                    return;
+                }
+
                 let mut msg = Cow::Borrowed(msg);
 
                 for _ in 0..5 {
